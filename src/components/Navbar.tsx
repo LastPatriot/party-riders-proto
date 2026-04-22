@@ -9,8 +9,17 @@ import { useEventStore } from '@/lib/store';
 export default function Navbar() {
   const pathname = usePathname();
   const event = useEventStore();
-  const isMarketing = pathname === '/' || pathname === '/login' || pathname === '/selection' || pathname === '/discover';
-  const isSetup = pathname === '/' && !event.hasInitialized && event.isAuthenticated;
+  
+  // Normalize pathname to handle trailing slashes
+  const normalizedPath = pathname?.replace(/\/$/, '') || '/';
+  
+  const isMarketing = normalizedPath === '/' || 
+                      normalizedPath === '' ||
+                      normalizedPath === '/login' || 
+                      normalizedPath === '/selection' || 
+                      normalizedPath === '/discover';
+                      
+  const isSetup = normalizedPath === '/' && !event.hasInitialized && event.isAuthenticated;
 
   const navItems = [
     { name: 'Discover', href: '/discover', icon: Globe },
@@ -18,6 +27,9 @@ export default function Navbar() {
     { name: 'RSVP Portal', href: '/rsvp', icon: Ticket },
     { name: 'Celebration Wall', href: '/wall', icon: Camera },
   ];
+
+  // Logic: Show restricted nav only if we are NOT on a marketing page AND NOT in setup mode
+  const shouldShowRestrictedNav = !isMarketing && !isSetup;
 
   return (
     <nav className={`fixed top-0 inset-x-0 h-24 z-[100] transition-all duration-700 ${isMarketing ? 'bg-transparent' : 'glass-header shadow-sm'}`}>
@@ -29,11 +41,11 @@ export default function Navbar() {
           <span>PartyRiders</span>
         </Link>
         
-        {/* Only show navigation items if NOT in marketing/auth/setup pages */}
-        {(!isMarketing && !isSetup) && (
+        {/* Navigation Items - Explicitly hidden on marketing and setup pages */}
+        {shouldShowRestrictedNav && (
           <div className="hidden lg:flex items-center gap-2 bg-white/50 backdrop-blur-md border border-zinc-100 p-1.5 rounded-[2rem] shadow-sm">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = normalizedPath === item.href;
               return (
                 <Link 
                   key={item.name} 
@@ -57,8 +69,8 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* Persistent Discover link for Landing page ONLY if not in setup */}
-        {(pathname === '/' && !isSetup) && (
+        {/* Discover link for Landing page ONLY */}
+        {(normalizedPath === '/' && !isSetup) && (
            <Link href="/discover" className="hidden lg:flex items-center gap-2 text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors">
               <Globe className="w-4 h-4" /> Discover
            </Link>
@@ -77,7 +89,7 @@ export default function Navbar() {
               </div>
             </>
           ) : (
-             pathname !== '/login' && (
+             normalizedPath !== '/login' && (
                <Link href="/login" className="text-sm font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors">
                   Sign In
                </Link>
